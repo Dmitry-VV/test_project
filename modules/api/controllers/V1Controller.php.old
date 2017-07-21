@@ -1,0 +1,89 @@
+<?php
+
+namespace app\modules\api\controllers;
+
+use Yii;
+use yii\web\Request;
+use yii\web\Controller;
+use app\models\BooksModel;
+
+/**
+ * Default controller for the `api` module
+ */
+//class V1Controller extends Controller
+class V1Controller extends \yii\rest\ActiveController
+{
+	public $result = ['version'=>'v1'];
+	public $model_class = BooksModel::find();
+public function actions()
+{
+	$actions = parent::actions();
+	$actions['index']['prepareDataProvider'] = [$this, 'prepareDataProvider'];
+	return $actions;
+}
+public function prepareDataProvider()
+{
+	return BooksModel::find();
+}
+	public function actionIndex($book_id = 0)
+	{
+		print_r(\Yii::$app->getRequest()->getRestParam());
+		$books = BooksModel::find()->all();
+		$this->result['title'] = \Yii::$app->request->get('title');
+		if(!$this->result['title'])
+			$this->result['title'] = \Yii::$app->request->get('title');
+		$this->result['books'] = $books;
+
+		$this->prepareReguestJson();
+		return $this->result;
+	}
+	public function actionList()
+	{
+		$books = BooksModel::find()->all();
+		
+//		$this->result['title'] = \Yii::$app->request->post('title');
+		$this->result['books'] = [];
+
+		foreach($books AS $book)
+		{
+			$this->result['books'][] = [
+				'id' => $book->id,
+				'title' => $book->title,
+				'author' => $book->authors->name
+			];
+		}
+
+		$this->prepareReguestJson();
+		return $this->result;
+	}
+	public function actionById($book_id = 0)
+	{
+		$book = BooksModel::findOne(intval($book_id));
+		$this->result['book'] = [
+			'id' => $book->id,
+			'title' => $book->title,
+			'author' => $book->authors->name,
+		];
+		$this->prepareReguestJson();
+		return $this->result;
+	}
+	public function actionDelete($book_id = 0)
+	{
+		$book = BooksModel::findOne(intval($book_id));
+		$this->result['book'] = [
+			'id' => $book->id,
+			'title' => $book->title,
+			'author' => $book->authors->name,
+		];
+		$this->prepareReguestJson();
+		return $this->result;
+	}
+	public function prepareReguestJson()
+	{
+		\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+		$headers = \Yii::$app->response->headers;
+		$headers->set('Access-Control-Allow-Headers','X-extra-header');
+		$headers->set('Access-Control-Allow-Origin','*');
+		$headers->set('Access-Control-Allow-Methods','GET, POST, DELETE, PUT');
+	}
+}
